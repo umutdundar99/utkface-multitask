@@ -1,0 +1,20 @@
+data:
+  root_dir: /home/umutdundar/Desktop/repositories/utkface-multitask/utkface-multitask/dataset/processed_split
+  img_size: 224
+  min_age: 0
+  max_age: 79
+sampling:
+  oversample: true
+  groups: 2 # decades from 0–9, 10–19, …, 70–79
+training:
+  batch_size: 64
+  max_epochs: 10
+  lr: 1e-3
+  temperature: 0.02
+logging:
+  wandb:
+    project: utkface-multitask
+    name: contrastive
+    offline: False
+    log_model: all
+    save_dir: /home/umutdundar/Desktop/repositories/utkface-multitask/logs
