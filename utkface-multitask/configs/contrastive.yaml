@@ -1,11 +1,11 @@
 data:
   root_dir: /home/umutdundar/Desktop/repositories/utkface-multitask/utkface-multitask/dataset/processed_split
-  img_size: 224
+  img_size: 512
   min_age: 0
   max_age: 79
 sampling:
   oversample: true
-  groups: 2 # decades from 0–9, 10–19, …, 70–79
+  groups: 4 # decades from 0–9, 10–19, …, 70–79
 training:
   batch_size: 64
   max_epochs: 10
@@ -14,7 +14,7 @@ training:
 logging:
   wandb:
     project: utkface-multitask
-    name: contrastive
+    name: contrastive_4n_002temp_nocrop
     offline: False
     log_model: all
     save_dir: /home/umutdundar/Desktop/repositories/utkface-multitask/logs

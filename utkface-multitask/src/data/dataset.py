@@ -47,11 +47,11 @@ class UTKFaceContrastiveDataset(Dataset):
         self.groups = samp_cfg.groups
         self.transform = get_contrastive_augmentations(data_cfg.img_size)
 
-        # compute group_size once
+      
         self.span = data_cfg.max_age - data_cfg.min_age + 1
         self.group_size = self.span // self.groups
 
-        # build index by group
+        
         self.by_group = {}
         # self.debug = {f"{int(g)}": [] for g in range(self.groups)}
 

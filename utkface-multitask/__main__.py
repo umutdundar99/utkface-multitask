@@ -22,6 +22,7 @@ def main_contrastive(cfg: DictConfig):
         callbacks=[checkpoint],
         precision=32,
         log_every_n_steps=10,
+        val_check_interval=50,
     )
     trainer.fit(model, datamodule=dm)
 
