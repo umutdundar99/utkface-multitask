@@ -1,20 +1,20 @@
+hydra:
+  run:
+    dir: .
+
 data:
   root_dir: /home/umutdundar/Desktop/repositories/utkface-multitask/utkface-multitask/dataset/processed_split
-  img_size: 512
-  min_age: 0
-  max_age: 79
-sampling:
-  oversample: true
-  groups: 4 # decades from 0–9, 10–19, …, 70–79
+  img_size: 224
+
 training:
   batch_size: 64
-  max_epochs: 10
+  num_epochs: 10
   lr: 1e-3
-  temperature: 0.02
+  temperature: 0.07
 logging:
   wandb:
     project: utkface-multitask
-    name: contrastive_4n_002temp_nocrop
+    name: contrastive_experiment_temp007
     offline: False
     log_model: all
     save_dir: /home/umutdundar/Desktop/repositories/utkface-multitask/logs

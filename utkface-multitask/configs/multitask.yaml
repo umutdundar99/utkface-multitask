@@ -1,0 +1,21 @@
+hydra:
+  run:
+    dir: .
+
+data:
+  root_dir: /home/umutdundar/Desktop/repositories/utkface-multitask/utkface-multitask/dataset/processed_split
+  img_size: 224
+  multitask: True
+
+training:
+  batch_size: 64
+  num_epochs: 10
+  lr: 1e-3
+  temperature: 0.02
+logging:
+  wandb:
+    project: utkface-multitask
+    name: contrastive_experiment_temp002
+    offline: False
+    log_model: all
+    save_dir: /home/umutdundar/Desktop/repositories/utkface-multitask/logs

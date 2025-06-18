@@ -40,7 +40,7 @@ class ContrastiveModule(pl.LightningModule):
             nn.Linear(self.encoder.out_dim, 512), nn.ReLU(), nn.Linear(512, 128)
         )
         self.lr = tcfg["lr"]
-        self.max_epochs = tcfg["max_epochs"]
+        self.num_epochs = tcfg["num_epochs"]
         self.temperature = tcfg["temperature"]
         self.sigma = tcfg.get("sigma", 0.5)
 
@@ -88,5 +88,5 @@ class ContrastiveModule(pl.LightningModule):
 
     def configure_optimizers(self):
         opt = torch.optim.AdamW(self.parameters(), lr=self.lr)
-        sch = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=self.max_epochs)
+        sch = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=self.num_epochs)
         return [opt], [sch]
