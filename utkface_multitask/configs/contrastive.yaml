@@ -7,7 +7,7 @@ data:
   img_size: 224
 
 training:
-  batch_size: 64
+  batch_size: 32
   num_epochs: 5
   lr: 1e-3
   temperature: 0.07
@@ -15,6 +15,6 @@ logging:
   wandb:
     project: utkface-multitask
     name: contrastive_temp007_5class
-    offline: False
-    log_model: all
+    offline: True
+    log_model: null
     save_dir: /home/umutdundar/Desktop/repositories/utkface-multitask/logs

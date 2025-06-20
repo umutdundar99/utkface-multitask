@@ -9,14 +9,15 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-from .augmentations import get_contrastive_augmentations
+from .augmentations import get_contrastive_augmentations, get_classification_augmentations
 
 age_groups = {
     "0": list(range(0,5)),
     "1": list(range(5,15)),
-    "2": list(range(15, 45)),  
-    "3": list(range(45, 65)),
-    "4": list(range(65,100))
+    "2": list(range(15, 25)),
+    "3": list(range(25, 45)),  
+    "4": list(range(45, 65)),
+    "5": list(range(65,100))
 }
 
 
@@ -61,22 +62,18 @@ class UTKFaceContrastiveDataset(Dataset):
 
         return image
 
-    def preprocess_image(self, image):
-        #image = cv2.resize(image, self.img_size)
-        image = np.transpose(image, (2, 0, 1))
-        image = torch.tensor(image, dtype=torch.float32)
-        return image
+
 
     def __getitem__(self, idx):
         fname, age, grp = self.df.iloc[idx]
         raw = self.read_image(os.path.join(self.root, fname))
-        anchor = self.preprocess_image(self.transform(image=raw)["image"])
+        anchor = self.transform(image=raw)["image"]
 
 
         pos_age= self.df[self.df["age"] == age]
         pos_fname = random.choice(pos_age["image"].values)
         pos_raw = self.read_image(os.path.join(self.root, pos_fname))
-        pos = self.preprocess_image(self.transform(image=pos_raw)["image"])
+        pos = self.transform(image=pos_raw)["image"]
 
         # one negative per other group
         negs, neg_age_diffs = [], []
@@ -87,7 +84,7 @@ class UTKFaceContrastiveDataset(Dataset):
             n = random.choice(idxs)
             fn, fn_age = self.df.iloc[n][["image", "age"]]
             neg_raw = self.read_image(os.path.join(self.root, fn))
-            negs.append(self.preprocess_image(self.transform(image=neg_raw)["image"]))
+            negs.append(self.transform(image=neg_raw)["image"])
             neg_age_diffs.append(abs(age - fn_age))
 
         negs = [neg.clone().detach() for neg in negs]
@@ -103,7 +100,7 @@ class UTKFaceMultitaskDataset(Dataset):
         self.task = self.cfg.training.multitask
         self.img_size = (cfg.data.img_size, cfg.data.img_size)
         self.root = os.path.join(self.cfg["data"]["root_dir"], split)
-        self.transform = get_contrastive_augmentations(cfg.data.img_size)
+        self.transform = get_classification_augmentations(cfg.data.img_size)
         self.all_frames = os.listdir(self.root)
         
         self.all_frames = [img for img in self.all_frames if int(img.split("_")[0]) < 100]
@@ -124,11 +121,6 @@ class UTKFaceMultitaskDataset(Dataset):
 
         return image
 
-    def preprocess_image(self, image):
-        image = cv2.resize(image, self.img_size)
-        image = np.transpose(image, (2, 0, 1))
-        image = torch.tensor(image, dtype=torch.float32)
-        return image
 
     def __getitem__(self, idx):
         image_path = self.images[idx]

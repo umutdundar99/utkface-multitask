@@ -9,4 +9,5 @@ def get_logger(cfg: str):
         offline=cfg["offline"],
         log_model=cfg["log_model"],
         save_dir=cfg["save_dir"],
+        group=cfg.get("group", None),
     )

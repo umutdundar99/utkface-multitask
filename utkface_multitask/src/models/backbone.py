@@ -3,7 +3,7 @@ import torchvision.models as models
 
 
 class ResNetBackbone(nn.Module):
-    def __init__(self, pretrained=True, task:str="contrastive", multitask:bool=False, num_classes:int=5):
+    def __init__(self, pretrained=True, task:str="contrastive", multitask:bool=False, num_classes:int=6):
         super().__init__()
         r = models.resnet18(pretrained=pretrained)
         self.encoder = nn.Sequential(*list(r.children())[:-1]) if task == "contrastive" else nn.Sequential(*list(r.children())[:-2])

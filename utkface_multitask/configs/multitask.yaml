@@ -17,7 +17,8 @@ training:
 logging:
   wandb:
     project: utkface-multitask
-    name: imagenetpretrained_multitask_all1e-3lr
+    name: delete
     offline: False
-    log_model: all
+    log_model: null
     save_dir: /home/umutdundar/Desktop/repositories/utkface-multitask/logs
+    group: 6-classes

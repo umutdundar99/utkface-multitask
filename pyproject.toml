@@ -20,6 +20,10 @@ dependencies = [
 "scipy >= 1.7.3",
 "tiktoken >= 0.9.0",
 "typer >= 0.4.0",
+"opencv-python>=4.8.0",
+"albumentations >= 1.3.0",
+"torchvision >= 0.16.0",
+
 ]
 
 

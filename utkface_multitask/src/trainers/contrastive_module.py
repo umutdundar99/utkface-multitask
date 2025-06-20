@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from src.models.backbone import ResNetBackbone
+from utkface_multitask.src.models.backbone import ResNetBackbone
 
 
 def distance_weighted_contrastive_loss(

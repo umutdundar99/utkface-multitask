@@ -56,7 +56,7 @@ class MulticlassFocalLoss(nn.Module):
             return loss  # shape (N,)
 
 class ClassificationModule(L.LightningModule):
-    num_classes = 5
+    num_classes = 6
     def __init__(self, cfg, model, multitask: bool = False):
         super().__init__()
         self.cfg = cfg
@@ -89,7 +89,6 @@ class ClassificationModule(L.LightningModule):
             prefix='train/classification/'
         )
 
-        # VAL METRICS
         self.val_classification_metrics = MetricCollection(
             metrics=[
                 Accuracy(task="multiclass", num_classes=self.num_classes),
