@@ -1,5 +1,7 @@
 import sys
+
 from utkface_multitask.train import train
+
 
 def main():
     if len(sys.argv) < 2:
@@ -13,6 +15,7 @@ def main():
         sys.exit(1)
 
     train(task)
+
 
 if __name__ == "__main__":
     main()

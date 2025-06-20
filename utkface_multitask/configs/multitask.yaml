@@ -5,7 +5,7 @@ hydra:
 data:
   root_dir: /home/umutdundar/Desktop/repositories/utkface-multitask/utkface-multitask/dataset/processed_split
   img_size: 224
-  
+
 
 training:
   multitask: True

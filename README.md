@@ -60,7 +60,7 @@ Before running training or evaluation, **you must first generate face masks** an
    python utkface_multitask/mask_inference/inference.py
    ```
 
-2. **Split the dataset afterwards.**  
+2. **Split the dataset afterwards.**
    The final dataset folder should be structured as follows:
 
 ```

@@ -4,35 +4,36 @@ from copy import deepcopy
 
 import cv2
 import lightning as L
-import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-from .augmentations import get_contrastive_augmentations, get_classification_augmentations
+from .augmentations import (
+    get_classification_augmentations,
+    get_contrastive_augmentations,
+)
 
 age_groups = {
-    "0": list(range(0,5)),
-    "1": list(range(5,15)),
+    "0": list(range(0, 5)),
+    "1": list(range(5, 15)),
     "2": list(range(15, 25)),
-    "3": list(range(25, 45)),  
+    "3": list(range(25, 45)),
     "4": list(range(45, 65)),
-    "5": list(range(65,100))
+    "5": list(range(65, 100)),
 }
 
 
-
 class UTKFaceContrastiveDataset(Dataset):
-    span = 100  
+    span = 100
 
     def __init__(self, cfg, split):
         self.cfg = deepcopy(cfg)
         self.img_size = (cfg.data.img_size, cfg.data.img_size)
         self.root = os.path.join(self.cfg["data"]["root_dir"], split)
         self.df = pd.DataFrame(columns=["image", "age", "group"])
-        
+
         self.transform = get_contrastive_augmentations(cfg.data.img_size)
-        
+
         for image in os.listdir(self.root):
             if image.endswith("_mask.png"):
                 continue
@@ -42,15 +43,22 @@ class UTKFaceContrastiveDataset(Dataset):
             for group_name, age_range in age_groups.items():
                 if age in age_range:
                     self.df = pd.concat(
-                        [self.df, pd.DataFrame({"image": [image], "age": [age], "group": [group_name]})],
-                        ignore_index=True
+                        [
+                            self.df,
+                            pd.DataFrame(
+                                {"image": [image], "age": [age], "group": [group_name]}
+                            ),
+                        ],
+                        ignore_index=True,
                     )
         # upsample to highest value to all groups
         max_group_size = self.df["group"].value_counts().max()
-        self.df = self.df.groupby("group").apply(
-            lambda x: x.sample(max_group_size, replace=True)
-        ).reset_index(drop=True)
-       
+        self.df = (
+            self.df.groupby("group")
+            .apply(lambda x: x.sample(max_group_size, replace=True))
+            .reset_index(drop=True)
+        )
+
     def __len__(self):
         return len(self.df)
 
@@ -62,15 +70,12 @@ class UTKFaceContrastiveDataset(Dataset):
 
         return image
 
-
-
     def __getitem__(self, idx):
         fname, age, grp = self.df.iloc[idx]
         raw = self.read_image(os.path.join(self.root, fname))
         anchor = self.transform(image=raw)["image"]
 
-
-        pos_age= self.df[self.df["age"] == age]
+        pos_age = self.df[self.df["age"] == age]
         pos_fname = random.choice(pos_age["image"].values)
         pos_raw = self.read_image(os.path.join(self.root, pos_fname))
         pos = self.transform(image=pos_raw)["image"]
@@ -89,12 +94,14 @@ class UTKFaceContrastiveDataset(Dataset):
 
         negs = [neg.clone().detach() for neg in negs]
         negs = torch.stack(negs)
-      
-        neg_age_diffs = torch.tensor(neg_age_diffs, dtype=torch.float32) / (self.span//2) 
+
+        neg_age_diffs = torch.tensor(neg_age_diffs, dtype=torch.float32) / (
+            self.span // 2
+        )
         return anchor, pos, negs, age, neg_age_diffs
-    
+
+
 class UTKFaceMultitaskDataset(Dataset):
-   
     def __init__(self, cfg, split):
         self.cfg = deepcopy(cfg)
         self.task = self.cfg.training.multitask
@@ -102,13 +109,19 @@ class UTKFaceMultitaskDataset(Dataset):
         self.root = os.path.join(self.cfg["data"]["root_dir"], split)
         self.transform = get_classification_augmentations(cfg.data.img_size)
         self.all_frames = os.listdir(self.root)
-        
-        self.all_frames = [img for img in self.all_frames if int(img.split("_")[0]) < 100]
-        self.images = sorted([img for img in self.all_frames if img.endswith("_image.png")])
-        
+
+        self.all_frames = [
+            img for img in self.all_frames if int(img.split("_")[0]) < 100
+        ]
+        self.images = sorted(
+            [img for img in self.all_frames if img.endswith("_image.png")]
+        )
+
         self.multitask = cfg.training.multitask
         if self.multitask:
-            self.masks = sorted([img for img in self.all_frames if img.endswith("_mask.png")])
+            self.masks = sorted(
+                [img for img in self.all_frames if img.endswith("_mask.png")]
+            )
 
     def __len__(self):
         return len(self.images)
@@ -121,44 +134,37 @@ class UTKFaceMultitaskDataset(Dataset):
 
         return image
 
-
     def __getitem__(self, idx):
         image_path = self.images[idx]
         age = int(image_path.split("_")[0])
-        
-        for group_name , age_range in age_groups.items():
+
+        for group_name, age_range in age_groups.items():
             if age in age_range:
                 group = torch.tensor(int(group_name), dtype=torch.long)
                 break
-        
+
         image = self.read_image(os.path.join(self.root, image_path))
         if self.multitask:
             mask_path = self.masks[idx]
             mask = self.read_image(os.path.join(self.root, mask_path))
-            mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY) 
+            mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
 
-           
             augmented = self.transform(image=image, mask=mask)
-            image = augmented["image"]  
-            mask = augmented["mask"]   
+            image = augmented["image"]
+            mask = augmented["mask"]
 
-            mask = mask.unsqueeze(0)  
+            mask = mask.unsqueeze(0)
             mask = mask / 255.0
 
             return image, group, mask
 
-            
-        else: 
+        else:
             image = self.transform(image=image)["image"]
             return image, group
-        
+
 
 class UTKFaceDataModule(L.LightningDataModule):
-    def __init__(self, 
-                 cfg:dict,
-                 num_workers:int=12,
-                 task:str= "contrastive"):
-        
+    def __init__(self, cfg: dict, num_workers: int = 12, task: str = "contrastive"):
         super().__init__()
         if task == "contrastive":
             self.train_dataset = UTKFaceContrastiveDataset(cfg, split="train")
@@ -177,7 +183,7 @@ class UTKFaceDataModule(L.LightningDataModule):
             shuffle=True,
             num_workers=self.num_workers,
             drop_last=True,
-            pin_memory= True,
+            pin_memory=True,
         )
 
     def val_dataloader(self):

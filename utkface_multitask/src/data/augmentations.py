@@ -1,6 +1,7 @@
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
+
 def get_contrastive_augmentations(img_size: int):
     return A.Compose(
         [
@@ -13,6 +14,7 @@ def get_contrastive_augmentations(img_size: int):
             ToTensorV2(),
         ]
     )
+
 
 def get_classification_augmentations(img_size: int):
     return A.Compose(

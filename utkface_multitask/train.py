@@ -1,20 +1,23 @@
 # train.py (yeniden yazılmış)
-from omegaconf import DictConfig
-from hydra import compose, initialize_config_dir
 import os
-import torch
+
 import lightning as pl
-from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
+import torch
+from hydra import compose, initialize_config_dir
+from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
+from omegaconf import DictConfig
+
 from utkface_multitask.src.data.dataset import UTKFaceDataModule
-from utkface_multitask.src.trainers.contrastive_module import ContrastiveModule
-from utkface_multitask.src.trainers.classification_module import ClassificationModule
-from utkface_multitask.src.utils.logger import get_logger
 from utkface_multitask.src.models.backbone import ResNetBackbone
+from utkface_multitask.src.trainers.classification_module import ClassificationModule
+from utkface_multitask.src.trainers.contrastive_module import ContrastiveModule
+from utkface_multitask.src.utils.logger import get_logger
+
 
 def train(task: str = "contrastive"):
     config_path = os.path.join(os.path.dirname(__file__), "configs")
     cfg_name = "contrastive.yaml" if task == "contrastive" else "multitask.yaml"
-    
+
     with initialize_config_dir(config_dir=config_path, version_base=None):
         cfg: DictConfig = compose(config_name=cfg_name)
 
@@ -41,10 +44,17 @@ def train(task: str = "contrastive"):
             multitask=cfg.training.multitask,
         )
         if cfg.training.checkpoint:
-            state_dict = torch.load(cfg.training.checkpoint, map_location="cpu")["state_dict"]
-            state_dict = {(k[8:] if k.startswith("encoder.") else k): v for k, v in state_dict.items()}
+            state_dict = torch.load(cfg.training.checkpoint, map_location="cpu")[
+                "state_dict"
+            ]
+            state_dict = {
+                (k[8:] if k.startswith("encoder.") else k): v
+                for k, v in state_dict.items()
+            }
             model.load_state_dict(state_dict, strict=False)
-        training_module = ClassificationModule(cfg, model, multitask=cfg.training.multitask)
+        training_module = ClassificationModule(
+            cfg, model, multitask=cfg.training.multitask
+        )
         logger = get_logger(cfg)
         checkpoint = ModelCheckpoint(monitor="val/loss", mode="min")
         trainer = pl.Trainer(
