@@ -13,12 +13,11 @@ from .augmentations import get_contrastive_augmentations
 
 age_groups = {
     "0": list(range(0,5)),
-    "1": list(range(5, 15)),
-    "2": list(range(15, 25)),
-    "3": list(range(25, 45)),
-    "4": list(range(45, 65)),
-    "5": list(range(65, 100))
-    }
+    "1": list(range(5,15)),
+    "2": list(range(15, 45)),  
+    "3": list(range(45, 65)),
+    "4": list(range(65,100))
+}
 
 
 
@@ -99,18 +98,19 @@ class UTKFaceContrastiveDataset(Dataset):
     
 class UTKFaceMultitaskDataset(Dataset):
    
-
     def __init__(self, cfg, split):
         self.cfg = deepcopy(cfg)
-        self.task = self.cfg.data.mulititask
+        self.task = self.cfg.training.multitask
         self.img_size = (cfg.data.img_size, cfg.data.img_size)
         self.root = os.path.join(self.cfg["data"]["root_dir"], split)
         self.transform = get_contrastive_augmentations(cfg.data.img_size)
         self.all_frames = os.listdir(self.root)
         
-        self.all_frames = [img for img in self.all_frames if int(img.split("_")[0]) <= 100]
+        self.all_frames = [img for img in self.all_frames if int(img.split("_")[0]) < 100]
         self.images = sorted([img for img in self.all_frames if img.endswith("_image.png")])
-        if self.task == "multitask":
+        
+        self.multitask = cfg.training.multitask
+        if self.multitask:
             self.masks = sorted([img for img in self.all_frames if img.endswith("_mask.png")])
 
     def __len__(self):
@@ -140,17 +140,24 @@ class UTKFaceMultitaskDataset(Dataset):
                 break
         
         image = self.read_image(os.path.join(self.root, image_path))
-        image = self.preprocess_image(self.transform(image=image)["image"])
-        if self.task == "multitask":
+        if self.multitask:
             mask_path = self.masks[idx]
             mask = self.read_image(os.path.join(self.root, mask_path))
-            mask = cv2.resize(mask, self.img_size)
-            mask = np.expand_dims(mask, axis=0) 
-            mask = torch.tensor(mask, dtype=torch.float32)
-            mask = mask / mask.max()
+            mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY) 
+
+           
+            augmented = self.transform(image=image, mask=mask)
+            image = augmented["image"]  
+            mask = augmented["mask"]   
+
+            mask = mask.unsqueeze(0)  
+            mask = mask / 255.0
 
             return image, group, mask
-        else:
+
+            
+        else: 
+            image = self.transform(image=image)["image"]
             return image, group
         
 
@@ -159,11 +166,12 @@ class UTKFaceDataModule(L.LightningDataModule):
                  cfg:dict,
                  num_workers:int=12,
                  task:str= "contrastive"):
+        
         super().__init__()
         if task == "contrastive":
             self.train_dataset = UTKFaceContrastiveDataset(cfg, split="train")
             self.val_dataset = UTKFaceContrastiveDataset(cfg, split="val")
-        elif task == "multitask":
+        elif task == "classification":
             self.train_dataset = UTKFaceMultitaskDataset(cfg, split="train")
             self.val_dataset = UTKFaceMultitaskDataset(cfg, split="val")
 
@@ -177,6 +185,7 @@ class UTKFaceDataModule(L.LightningDataModule):
             shuffle=True,
             num_workers=self.num_workers,
             drop_last=True,
+            pin_memory= True,
         )
 
     def val_dataloader(self):
@@ -186,4 +195,5 @@ class UTKFaceDataModule(L.LightningDataModule):
             shuffle=False,
             num_workers=self.num_workers,
             drop_last=False,
+            pin_memory=True,
         )
